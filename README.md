@@ -56,7 +56,6 @@ pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg
 ```
 ## 🍭 Quick Inference
 #### Step 1: Download the pretrained models
-- Download the pretrained SD-2.1base models from [HuggingFace](https://huggingface.co/stabilityai/stable-diffusion-2-1-base).
 - Download the CCSR models from:
 
 | Model Name           | Description                                  | GoogleDrive                                                                           | OneDive                                                                       |
