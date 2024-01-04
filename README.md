@@ -193,7 +193,7 @@ The following are BibTeX references:
 This project is released under the [Apache 2.0 license](LICENSE).
 
 ### Acknowledgement
-This project is based on [ControlNet](https://github.com/lllyasviel/ControlNet), [BasicSR](https://github.com/XPixelGroup/BasicSR) and [DiffBIR](https://github.com/XPixelGroup/DiffBIR). Some codes are brought from [StableSR](https://github.com/IceClear/StableSR).Thanks for their awesome works. 
+This project is based on [ControlNet](https://github.com/lllyasviel/ControlNet), [BasicSR](https://github.com/XPixelGroup/BasicSR) and [DiffBIR](https://github.com/XPixelGroup/DiffBIR). Some codes are brought from [StableSR](https://github.com/IceClear/StableSR). Thanks for their awesome works. 
 
 ### Contact
 If you have any questions, please contact: ling-chen.sun@connect.polyu.hk
