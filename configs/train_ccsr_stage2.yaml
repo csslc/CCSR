@@ -1,0 +1,49 @@
+data:
+  target: dataset.data_module.BIRDataModule
+  params:
+    # Path to training set configuration file.
+    train_config: configs/dataset/general_deg_stablesr_realesrgan_train.yaml
+    # Path to validation set configuration file.
+    val_config: configs/dataset/general_deg_stablesr_realesrgan_val.yaml
+
+model:
+  # You can set learning rate in the following configuration file.
+  config: configs/model/ccsr_stage2.yaml
+  # Path to the checkpoints or weights you want to resume. At the begining, 
+  # this should be set to the weights obtained from ccsr_stage1
+  resume: /ccsr_stage1.ckpt
+
+
+lightning:
+  seed: 231
+  
+  trainer:
+    accelerator: ddp
+    precision: 32
+    # Indices of GPUs used for training.
+    gpus: [0,1,2,3,]
+    # Path to save logs and checkpoints.
+    default_root_dir: experiments/test_ccsr_stage2
+    # Max number of training steps (batches).
+    max_steps: 60
+    # Validation frequency in terms of training steps.
+    val_check_interval: 390
+    log_every_n_steps: 50
+    # 50
+    # Accumulate gradients from multiple batches so as to increase batch size.
+    accumulate_grad_batches: 8
+  
+  callbacks:
+    - target: model.callbacks.ImageLogger
+      params:
+        # Log frequency of image logger.
+        log_every_n_steps: 150000
+        max_images_each_step: 4
+        log_images_kwargs: ~
+
+    - target: model.callbacks.ModelCheckpoint
+      params:
+        # Frequency of saving checkpoints.
+        every_n_train_steps: 20
+        save_top_k: -1
+        filename: "{step}"
