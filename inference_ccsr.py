@@ -36,12 +36,14 @@ def process(
     tile_stride: int
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
-    Apply DiffBIR model on a list of low-quality images.
+    Apply CCSR model on a list of low-quality images.
     
     Args:
         model (ControlLDM): Model.
         control_imgs (List[np.ndarray]): A list of low-quality images (HWC, RGB, range in [0, 255]).
         steps (int): Sampling steps.
+        t_max (float):
+        t_min (float):
         strength (float): Control strength. Set to 1.0 during training.
         color_fix_type (str): Type of color correction for samples.
         disable_preprocess_model (bool): If specified, preprocess model (SwinIR) will not be used.
