@@ -29,7 +29,7 @@ from ldm.models.diffusion.ddim import DDIMSampler
 from model.mixins import ImageLoggerMixin
 
 from model.q_sampler import space_timesteps
-
+from utils.tilevae import VAEHook
 
 __conditioning_keys__ = {'concat': 'c_concat',
                          'crossattn': 'c_crossattn',
@@ -117,7 +117,8 @@ class DDPM(pl.LightningModule, ImageLoggerMixin):
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys, only_model=load_only_unet)
             if reset_ema:
                 assert self.use_ema
-                print(f"Resetting ema to pure model weights. This is useful when restoring from an ema-only checkpoint.")
+                print(
+                    f"Resetting ema to pure model weights. This is useful when restoring from an ema-only checkpoint.")
                 self.model_ema = LitEma(self.model)
         if reset_num_ema_updates:
             print(" +++++++++++ WARNING: RESETTING NUM_EMA UPDATES TO ZERO +++++++++++ ")
@@ -126,7 +127,7 @@ class DDPM(pl.LightningModule, ImageLoggerMixin):
 
         self.register_schedule(given_betas=given_betas, beta_schedule=beta_schedule, timesteps=timesteps,
                                linear_start=linear_start, linear_end=linear_end, cosine_s=cosine_s)
-        
+
         self.t_max = t_max
         self.t_min = t_min
 
@@ -214,7 +215,7 @@ class DDPM(pl.LightningModule, ImageLoggerMixin):
         assert not torch.isnan(self.lvlb_weights).all()
 
     def register_schedule_inter(self, given_betas=None, beta_schedule="linear", timesteps=1000,
-                          linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
+                                linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
         if exists(given_betas):
             betas = given_betas
         else:
@@ -249,7 +250,8 @@ class DDPM(pl.LightningModule, ImageLoggerMixin):
         # above: equal to 1. / (1. / (1. - alpha_cumprod_tm1) + alpha_t / beta_t)
         self.register_buffer('posterior_variance_inter', to_torch(posterior_variance))
         # below: log calculation clipped because the posterior variance is 0 at the beginning of the diffusion chain
-        self.register_buffer('posterior_log_variance_clipped_inter', to_torch(np.log(np.maximum(posterior_variance, 1e-20))))
+        self.register_buffer('posterior_log_variance_clipped_inter',
+                             to_torch(np.log(np.maximum(posterior_variance, 1e-20))))
         self.register_buffer('posterior_mean_coef1_inter', to_torch(
             betas * np.sqrt(alphas_cumprod_prev) / (1. - alphas_cumprod)))
         self.register_buffer('posterior_mean_coef2_inter', to_torch(
@@ -364,7 +366,7 @@ class DDPM(pl.LightningModule, ImageLoggerMixin):
                 extract_into_tensor(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t -
                 extract_into_tensor(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape) * noise
         )
-    
+
     def predict_start_from_noise_inter(self, x_t, t, noise):
         return (
                 extract_into_tensor(self.sqrt_recip_alphas_cumprod_inter, t, x_t.shape) * x_t -
@@ -393,7 +395,7 @@ class DDPM(pl.LightningModule, ImageLoggerMixin):
         posterior_variance = extract_into_tensor(self.posterior_variance, t, x_t.shape)
         posterior_log_variance_clipped = extract_into_tensor(self.posterior_log_variance_clipped, t, x_t.shape)
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
-    
+
     def q_posterior_inter(self, x_start, x_t, t):
         posterior_mean = (
                 extract_into_tensor(self.posterior_mean_coef1_inter, t, x_t.shape) * x_start +
@@ -548,11 +550,11 @@ class DDPM(pl.LightningModule, ImageLoggerMixin):
 
     @torch.no_grad()
     def validation_step(self, batch, batch_idx):
-        _, loss_dict_no_ema_0 = self.shared_step(batch,0)
-        _, loss_dict_no_ema_1 = self.shared_step(batch,1)
+        _, loss_dict_no_ema_0 = self.shared_step(batch, 0)
+        _, loss_dict_no_ema_1 = self.shared_step(batch, 1)
         with self.ema_scope():
-            _, loss_dict_ema_0 = self.shared_step(batch,0)
-            _, loss_dict_ema_1 = self.shared_step(batch,1)
+            _, loss_dict_ema_0 = self.shared_step(batch, 0)
+            _, loss_dict_ema_1 = self.shared_step(batch, 1)
             loss_dict_ema_0 = {key + '_ema': loss_dict_ema_0[key] for key in loss_dict_ema_0}
             loss_dict_ema_1 = {key + '_ema': loss_dict_ema_1[key] for key in loss_dict_ema_1}
         self.log_dict(loss_dict_no_ema_0, prog_bar=False, logger=True, on_step=False, on_epoch=True)
@@ -662,7 +664,7 @@ class LatentDiffusion(DDPM):
             self.register_buffer('scale_factor', torch.tensor(scale_factor))
         self.instantiate_first_stage(first_stage_config)
         self.instantiate_cond_stage(cond_stage_config)
-        self.instantiate_decoder_loss(lossconfig) 
+        self.instantiate_decoder_loss(lossconfig)
         self.cond_stage_forward = cond_stage_forward
         self.clip_denoised = False
         self.bbox_tokenizer = None
@@ -712,6 +714,30 @@ class LatentDiffusion(DDPM):
         if self.shorten_cond_schedule:
             self.make_cond_schedule()
 
+    def _init_tiled_vae(self,
+                        encoder_tile_size=256,
+                        decoder_tile_size=256,
+                        fast_decoder=False,
+                        fast_encoder=False,
+                        color_fix=False,
+                        vae_to_gpu=True):
+        # copy from ''
+        # save original forward (only once)
+        if not hasattr(self.first_stage_model.encoder, 'original_forward'):
+            setattr(self.first_stage_model.encoder, 'original_forward', self.first_stage_model.encoder.forward)
+        if not hasattr(self.first_stage_model.decoder, 'original_forward'):
+            setattr(self.first_stage_model.decoder, 'original_forward', self.first_stage_model.decoder.forward)
+
+        encoder = self.first_stage_model.encoder
+        decoder = self.first_stage_model.decoder
+
+        self.first_stage_model.encoder.forward = VAEHook(
+            encoder, encoder_tile_size, is_decoder=False, fast_decoder=fast_decoder, fast_encoder=fast_encoder,
+            color_fix=color_fix, to_gpu=vae_to_gpu)
+        self.first_stage_model.decoder.forward = VAEHook(
+            decoder, decoder_tile_size, is_decoder=True, fast_decoder=fast_decoder, fast_encoder=fast_encoder,
+            color_fix=color_fix, to_gpu=vae_to_gpu)
+
     def instantiate_first_stage(self, config):
         model = instantiate_from_config(config)
         self.first_stage_model = model.eval()
@@ -724,10 +750,10 @@ class LatentDiffusion(DDPM):
                 param.requires_grad = True
         # for param in self.first_stage_model.parameters():
         #     param.requires_grad = False
-    
+
     def instantiate_decoder_loss(self, config):
         decoder_loss = instantiate_from_config(config)
-        
+
         self.decoder_loss = decoder_loss.train()
         self.decoder_loss.train = disabled_train
         # train discriminator
@@ -943,7 +969,7 @@ class LatentDiffusion(DDPM):
 
         z = 1. / self.scale_factor * z
         return self.first_stage_model.decode(z)
-    
+
     # 2023-04-08
     def decode_first_stage_with_grad(self, z, predict_cids=False, force_not_quantize=False):
         if predict_cids:
@@ -959,16 +985,16 @@ class LatentDiffusion(DDPM):
     def encode_first_stage(self, x):
         return self.first_stage_model.encode(x)
 
-    def shared_step(self, batch,index, **kwargs):
+    def shared_step(self, batch, index, **kwargs):
         gt, x, c = self.get_input(batch, self.first_stage_key)
-        loss = self(gt, x, c,index)
+        loss = self(gt, x, c, index)
         return loss
 
     def forward(self, gt, x, c, opt_index, *args, **kwargs):
-        T = (self.num_timesteps-1) * torch.ones(x.shape[0]).to(self.device).long()
-        t_max = round(self.num_timesteps*self.t_max) * torch.ones(x.shape[0]).to(self.device).long()
+        T = (self.num_timesteps - 1) * torch.ones(x.shape[0]).to(self.device).long()
+        t_max = round(self.num_timesteps * self.t_max) * torch.ones(x.shape[0]).to(self.device).long()
         t = torch.randint(0, t_max[0], (x.shape[0],), device=self.device).long()
-        
+
         if self.model.conditioning_key is not None:
             assert c is not None
             if self.cond_stage_trainable:
@@ -1012,7 +1038,7 @@ class LatentDiffusion(DDPM):
         qt_mean, _, qt_log_variance = self.q_mean_variance(x_start, t)
         kl_prior = normal_kl(mean1=qt_mean, logvar1=qt_log_variance, mean2=0.0, logvar2=0.0)
         return mean_flat(kl_prior) / np.log(2.0)
-    
+
     def _extract_into_tensor(arr, timesteps, broadcast_shape):
         """
         Extract values from a 1-D numpy array for a batch of indices.
@@ -1028,13 +1054,13 @@ class LatentDiffusion(DDPM):
         except:
             # to be compatible with mps
             res = torch.from_numpy(arr.astype(np.float32)).to(device=timesteps.device)[timesteps].float()
-            
+
         while len(res.shape) < len(broadcast_shape):
             res = res[..., None]
         return res.expand(broadcast_shape)
 
     def p_losses(self, gt, x_start, cond, t, t_max, t_tao, opt_index, noise=None):
-        
+
         # obtain the input of decoder
 
         with torch.no_grad():
@@ -1043,11 +1069,11 @@ class LatentDiffusion(DDPM):
             model_output_noise = self.apply_model(x_noisy, t_max, cond)
             model_output_x0 = self.predict_start_from_noise(x_noisy, t=t_max, noise=model_output_noise)
 
-            time_range = np.flip(self.timesteps_inter) # [1000, 950, 900, ...]
+            time_range = np.flip(self.timesteps_inter)  # [1000, 950, 900, ...]
             total_steps = len(time_range)
-            time_range = time_range[round(total_steps*(1-self.t_max)):]
+            time_range = time_range[round(total_steps * (1 - self.t_max)):]
             total_steps_end = len(time_range)
-            time_range = time_range[:-round(total_steps*self.t_min)]
+            time_range = time_range[:-round(total_steps * self.t_min)]
 
             b = x_noisy.shape[0]
             t_tao = time_range[0] * torch.ones(x_noisy.shape[0]).to(self.device).long()
@@ -1058,7 +1084,6 @@ class LatentDiffusion(DDPM):
 
             # iterator = tqdm(time_range, desc="Spaced Sampler", total=total_steps)
 
-            
             for i, step in enumerate(time_range):
                 ts = torch.full((b,), step, device=self.device, dtype=torch.long)
                 index = torch.full_like(ts, fill_value=total_steps_end - i - 1)
@@ -1068,7 +1093,7 @@ class LatentDiffusion(DDPM):
                 model_log_variance = model_log_variance * torch.ones(model_output_x0.shape).to(self.device)
                 model_sample = DiagonalGaussianDistribution(torch.cat([model_mean, model_log_variance], 1))
                 img = model_sample.sample()
-        
+
         # train decoder
         net_input = 1. / self.scale_factor * model_output_x0
         net_input = self.first_stage_model.post_quant_conv(net_input)
@@ -1096,19 +1121,19 @@ class LatentDiffusion(DDPM):
 
         if opt_index == 0:
             last_layer = self.first_stage_model.decoder.conv_out.weight
-            loss,_ = self.decoder_loss(inputs=gt, reconstructions=out_decoder, optimizer_idx=opt_index, global_step=self.global_step,
-            last_layer=last_layer, split="train")
+            loss, _ = self.decoder_loss(inputs=gt, reconstructions=out_decoder, optimizer_idx=opt_index,
+                                        global_step=self.global_step,
+                                        last_layer=last_layer, split="train")
             loss_dict.update({f'{prefix}/loss': loss})
             return loss, loss_dict
         else:
             last_layer = self.first_stage_model.decoder.conv_out.weight
             # train the discriminator net
-            d_loss, _= self.decoder_loss(inputs=gt, reconstructions=out_decoder, optimizer_idx=opt_index, global_step=self.global_step,
-            last_layer=last_layer, split="train")
+            d_loss, _ = self.decoder_loss(inputs=gt, reconstructions=out_decoder, optimizer_idx=opt_index,
+                                          global_step=self.global_step,
+                                          last_layer=last_layer, split="train")
             loss_dict.update({f'{prefix}/d_loss': d_loss.mean()})
             return d_loss, loss_dict
-
-
 
         # if opt_index == 0:
         #     noise = default(noise, lambda: torch.randn_like(x_start))
@@ -1154,11 +1179,11 @@ class LatentDiffusion(DDPM):
         #     noise2 = default(noise, lambda: torch.randn_like(x_start))
         #     x_noisy = self.q_sample(x_start=x_start, t=t_max, noise=noise2)
         #     model_output_noise = self.apply_model(x_noisy, t_max, cond)
-            
-            # model_output_x0 = self.predict_start_from_noise(x_noisy, t=t_max, noise=model_output_noise)
-            
-            # noise3 = default(noise, lambda: torch.randn_like(x_start))
-            # model_output_noisy_tao = self.q_sample(x_start=model_output_x0, t=t_tao, noise=noise3)
+
+        # model_output_x0 = self.predict_start_from_noise(x_noisy, t=t_max, noise=model_output_noise)
+
+        # noise3 = default(noise, lambda: torch.randn_like(x_start))
+        # model_output_noisy_tao = self.q_sample(x_start=model_output_x0, t=t_tao, noise=noise3)
 
         #     model_output_noise_from_tao = self.apply_model(model_output_noisy_tao, t_tao, cond)
         #     model_output_x0_from_tao = self.predict_start_from_noise(model_output_noisy_tao, t=t_tao, noise=model_output_noise_from_tao) # predict x0 from tao
@@ -1723,7 +1748,7 @@ class LatentUpscaleDiffusion(LatentDiffusion):
                     uc[k] = [uc_tmp]
                 elif k == "c_adm":  # todo: only run with text-based guidance?
                     assert isinstance(c[k], torch.Tensor)
-                    #uc[k] = torch.ones_like(c[k]) * self.low_scale_model.max_noise_level
+                    # uc[k] = torch.ones_like(c[k]) * self.low_scale_model.max_noise_level
                     uc[k] = c[k]
                 elif isinstance(c[k], list):
                     uc[k] = [c[k][i] for i in range(len(c[k]))]
@@ -1999,6 +2024,7 @@ class LatentUpscaleFinetuneDiffusion(LatentFinetuneDiffusion):
     """
         condition on low-res image (and optionally on some spatial noise augmentation)
     """
+
     def __init__(self, concat_keys=("lr",), reshuffle_patch_size=None,
                  low_scale_config=None, low_scale_key=None, *args, **kwargs):
         super().__init__(concat_keys=concat_keys, *args, **kwargs)

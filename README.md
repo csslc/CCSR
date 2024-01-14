@@ -18,6 +18,8 @@
 
 
 ## ⏰ Update
+- **2024.1.14**: Integrate [tile_diffusion](https://github.com/albarji/mixture-of-diffusers) and [tile_vae](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/tree/main) to the [inference_ccsr_tile.py](\inference_ccsr_tile.py) to save the GPU memory for inference.
+- **2024.1.10**: Update [CCSR colab demo](https://colab.research.google.com/github/camenduru/CCSR-colab/blob/main/CCSR_colab.ipynb). ❤ Thank [camenduru](https://github.com/camenduru/CCSR-colab) for the implementation!
 - **2024.1.4**: Code and the model for real-world SR are released.
 - **2024.1.3**: Paper is released.
 - **2023.12.23**: Repo is released.
@@ -64,11 +66,10 @@ pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg
 #### Step 1: Download the pretrained models
 - Download the CCSR models from:
 
-| Model Name           | Description                                  | GoogleDrive                                                                           | OneDive                                                                       |
-|:---------------------|:---------------------------------------------|:--------------------------------------------------------------------------------------|:------------------------------------------------------------------------------|
-| real-world_ccsr.ckpt | CCSR model for real-world image restoration. | [download](https://drive.google.com/drive/folders/1jM1mxDryPk9CTuFTvYcraP2XIVzbPiw_?usp=drive_link) | download                                                 |
-| bicubic_ccsr.ckpt    | CCSR model for bicubic image restoration.    | download                                                                              | download                                                                      |
-
+| Model Name           | Description                                  | GoogleDrive                                                                           | BaiduNetdisk                                                            |
+|:---------------------|:---------------------------------------------|:--------------------------------------------------------------------------------------|:------------------------------------------------------------------------|
+| real-world_ccsr.ckpt | CCSR model for real-world image restoration. | [download](https://drive.google.com/drive/folders/1jM1mxDryPk9CTuFTvYcraP2XIVzbPiw_?usp=drive_link) | [download](https://pan.baidu.com/s/1uYi0-8nyH35P5rMsLD1J0w) (pwd: CCSR) |
+| bicubic_ccsr.ckpt    | CCSR model for bicubic image restoration.    | download                                                                              | download                                                                |
 
 #### Step 2: Prepare testing data
 You can put the testing images in the `preset/test_datasets`.
@@ -88,6 +89,29 @@ python inference_ccsr.py \
 --device cuda \
 --repeat_times 1 
 ```
+We integrate [tile_diffusion](https://github.com/albarji/mixture-of-diffusers) and [tile_vae](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/tree/main) to the [inference_ccsr_tile.py](\inference_ccsr_tile.py) to save the GPU memory for inference.
+You can change the tile size and stride according to the VRAM of your device.
+```
+python inference_ccsr_tile.py \
+--input preset/test_datasets \
+--config configs/model/ccsr_stage2.yaml \
+--ckpt /home/notebook/data/group/SunLingchen/code/CCSR/CCSR_weights/real-world_ccsr.ckpt \
+--steps 45 \
+--sr_scale 4 \
+--t_max 0.6667 \
+--t_min 0.3333 \
+--tile_diffusion \
+--tile_diffusion_size 512 \
+--tile_diffusion_stride 256 \
+--tile_vae \
+--vae_decoder_tile_size 224 \
+--vae_encoder_tile_size 1024 \
+--color_fix_type adain \
+--output experiments/test \
+--device cuda \
+--repeat_times 1
+```
+
 You can obtain `N` different SR results by setting `repeat_time` as `N` to test the stability of CCSR. The data folder should be like this:
 
 ```
