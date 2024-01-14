@@ -18,7 +18,7 @@
 
 
 ## ⏰ Update
-- **2024.1.14**: Integrate [tile_diffusion](https://github.com/albarji/mixture-of-diffusers) and [tile_vae](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/tree/main) to the [inference_ccsr_tile.py](\inference_ccsr_tile.py) to save the GPU memory for inference.
+- **2024.1.14**: Integrate [tile_diffusion](https://github.com/albarji/mixture-of-diffusers) and [tile_vae](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/tree/main) to the [inference_ccsr_tile.py](inference_ccsr_tile.py) to save the GPU memory for inference.
 - **2024.1.10**: Update [CCSR colab demo](https://colab.research.google.com/github/camenduru/CCSR-colab/blob/main/CCSR_colab.ipynb). ❤ Thank [camenduru](https://github.com/camenduru/CCSR-colab) for the implementation!
 - **2024.1.4**: Code and the model for real-world SR are released.
 - **2024.1.3**: Paper is released.
@@ -89,7 +89,7 @@ python inference_ccsr.py \
 --device cuda \
 --repeat_times 1 
 ```
-We integrate [tile_diffusion](https://github.com/albarji/mixture-of-diffusers) and [tile_vae](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/tree/main) to the [inference_ccsr_tile.py](\inference_ccsr_tile.py) to save the GPU memory for inference.
+We integrate [tile_diffusion](https://github.com/albarji/mixture-of-diffusers) and [tile_vae](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/tree/main) to the [inference_ccsr_tile.py](inference_ccsr_tile.py) to save the GPU memory for inference.
 You can change the tile size and stride according to the VRAM of your device.
 ```
 python inference_ccsr_tile.py \
