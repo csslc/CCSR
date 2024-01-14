@@ -37,7 +37,7 @@ def process(
     vae_encoder_tile_size: int
 ) -> Tuple[List[np.ndarray]]:
     """
-    Apply DiffBIR model on a list of low-quality images.
+    Apply CCSR model on a list of low-quality images.
     
     Args:
         model (ControlLDM): Model.
