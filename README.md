@@ -95,7 +95,7 @@ You can change the tile size and stride according to the VRAM of your device.
 python inference_ccsr_tile.py \
 --input preset/test_datasets \
 --config configs/model/ccsr_stage2.yaml \
---ckpt /home/notebook/data/group/SunLingchen/code/CCSR/CCSR_weights/real-world_ccsr.ckpt \
+--ckpt weights/real-world_ccsr.ckpt \
 --steps 45 \
 --sr_scale 4 \
 --t_max 0.6667 \
