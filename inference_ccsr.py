@@ -65,22 +65,19 @@ def process(
         # samples = sampler.sample_ccsr_stage1(
         #     steps=steps, t_max=t_max, shape=shape, cond_img=control,
         #     positive_prompt="", negative_prompt="", x_T=x_T,
-        #     cfg_scale=1.0, cond_fn=cond_fn,
-        #     color_fix_type=color_fix_type
+        #     cfg_scale=1.0, color_fix_type=color_fix_type
         # )
         samples = sampler.sample_ccsr(
             steps=steps, t_max=t_max, t_min=t_min, shape=shape, cond_img=control,
             positive_prompt="", negative_prompt="", x_T=x_T,
-            cfg_scale=1.0, cond_fn=cond_fn,
-            color_fix_type=color_fix_type
+            cfg_scale=1.0, color_fix_type=color_fix_type
         )
     else:
         samples = sampler.sample_with_mixdiff_ccsr(
             tile_size=tile_size, tile_stride=tile_stride,
             steps=steps, t_max=t_max, t_min=t_min, shape=shape, cond_img=control,
             positive_prompt="", negative_prompt="", x_T=x_T,
-            cfg_scale=1.0, cond_fn=cond_fn,
-            color_fix_type=color_fix_type
+            cfg_scale=1.0, color_fix_type=color_fix_type
         )
 
     x_samples = samples.clamp(0, 1)
