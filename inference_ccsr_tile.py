@@ -6,7 +6,6 @@ from argparse import ArgumentParser, Namespace
 import numpy as np
 import torch
 import einops
-from torch.nn import functional as F
 import pytorch_lightning as pl
 from PIL import Image
 from omegaconf import OmegaConf
@@ -14,7 +13,6 @@ from omegaconf import OmegaConf
 from ldm.xformers_state import disable_xformers
 from model.q_sampler import SpacedSampler
 from model.ccsr_stage1 import ControlLDM
-from model.cond_fn import MSEGuidance
 from utils.image import auto_resize, pad
 from utils.common import instantiate_from_config, load_state_dict
 from utils.file import list_image_files, get_file_name_parts
@@ -103,7 +101,6 @@ def process(
 
     x_samples = samples.clamp(0, 1)
     x_samples = (einops.rearrange(x_samples, "b c h w -> b h w c") * 255).cpu().numpy().clip(0, 255).astype(np.uint8)
-    control = (einops.rearrange(control, "b c h w -> b h w c") * 255).cpu().numpy().clip(0, 255).astype(np.uint8)
 
     preds = [x_samples[i] for i in range(n_samples)]
     

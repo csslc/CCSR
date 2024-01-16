@@ -11,7 +11,7 @@ opencv-python-headless
 scipy
 matplotlib
 lpips
-gradio
+gradio==3.24.0
 chardet
 transformers
 facexlib

@@ -6,7 +6,6 @@ from argparse import ArgumentParser, Namespace
 import numpy as np
 import torch
 import einops
-from torch.nn import functional as F
 import pytorch_lightning as pl
 from PIL import Image
 from omegaconf import OmegaConf
