@@ -6,7 +6,7 @@
 
 
 <a href='https://arxiv.org/pdf/2401.00877.pdf'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a> <a href='https://csslc.github.io/project-CCSR'><img src='https://img.shields.io/badge/Project page-Github-blue'></a> <a href='https://github.com/csslc/CCSR'><img src='https://img.shields.io/badge/Code-Github-green'></a> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/camenduru/CCSR-colab/blob/main/CCSR_colab.ipynb) 
-
+[![Replicate](https://replicate.com/cjwbw/ccsr/badge)](https://replicate.com/cjwbw/ccsr)
 
 [Lingchen Sun](https://scholar.google.com/citations?hl=zh-CN&tzom=-480&user=ZCDjTn8AAAAJ)<sup>1,2</sup>
 | [Rongyuan Wu](https://scholar.google.com/citations?user=A-U8zE8AAAAJ&hl=zh-CN)<sup>1,2</sup> | 
@@ -18,6 +18,7 @@
 
 
 ## ⏰ Update
+- **2024.1.17**: Add Replicate demo [![Replicate](https://replicate.com/cjwbw/ccsr/badge)](https://replicate.com/cjwbw/ccsr).
 - **2024.1.16**: Add Gradio demo.
 - **2024.1.14**: Integrate [tile_diffusion](https://github.com/albarji/mixture-of-diffusers) and [tile_vae](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/tree/main) to the [inference_ccsr_tile.py](inference_ccsr_tile.py) to save the GPU memory for inference.
 - **2024.1.10**: Update [CCSR colab demo](https://colab.research.google.com/github/camenduru/CCSR-colab/blob/main/CCSR_colab.ipynb). ❤ Thank [camenduru](https://github.com/camenduru/CCSR-colab) for the implementation!
