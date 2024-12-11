@@ -18,7 +18,7 @@
 
 
 ## ⏰ Update
-- **2024.12.10**: Code and models for CCSR-v2 are released. 👀 Please refer to this [branch](https://github.com/csslc/CCSR/tree/CCSR-v2.0).
+- **2024.12.12**: Code and models for CCSR-v2 are released. 👀 Please refer to this [branch](https://github.com/csslc/CCSR/tree/CCSR-v2.0).
 - **2024.9.25**: ⭐[CCSR-v2](https://arxiv.org/pdf/2401.00877) is released, offering reduced step requirements and supporting flexible diffusion step selection (2 or even 1 step) during the inference stage without the need for re-training.
 - **2024.1.17**: Add Replicate demo [![Replicate](https://replicate.com/cjwbw/ccsr/badge)](https://replicate.com/cjwbw/ccsr).
 - **2024.1.16**: Add Gradio demo.
