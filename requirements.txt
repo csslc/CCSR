@@ -1,11 +1,11 @@
 torch==2.0.1
-torchvision
+torchvision==2.0.1+cu118
 xformers
-pytorch_lightning
+pytorch_lightning==1.4.2
 einops
 open-clip-torch
 omegaconf
-torchmetrics
+torchmetrics==0.7
 triton==2.0.0
 opencv-python-headless
 scipy
